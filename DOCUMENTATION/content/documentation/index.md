@@ -201,7 +201,7 @@ More [options](https://docs.docker.com/compose/reference/logs/)
 <a name="Install-PHP-Extensions"></a>
 ## Install PHP Extensions
 
-Before installing PHP extensions, you have to decide whether you need for the `FPM` or `CLI` because each lives on a different container, if you need it for both you have to edit both containers.
+Before installing PHP extensions, you have to decide first whether you need `FPM` or `CLI`, because each of them has it's own different container, if you need it for both, you have to edit both containers.
 
 The PHP-FPM extensions should be installed in `php-fpm/Dockerfile-XX`. *(replace XX with your default PHP version number)*.
 <br>
@@ -215,53 +215,30 @@ The PHP-CLI extensions should be installed in `workspace/Dockerfile`.
 <br>
 <a name="Change-the-PHP-FPM-Version"></a>
 ## Change the (PHP-FPM) Version
-By default **PHP-FPM 7.0** is running.
+By default the latest stable PHP versin is configured to run.
 
 >The PHP-FPM is responsible of serving your application code, you don't have to change the PHP-CLI version if you are planning to run your application on different PHP-FPM version.
 
 
-### A) Switch from PHP `7.0` to PHP `5.6`
+### A) Switch from PHP `7.2` to PHP `5.6`
 
-1 - Open the `docker-compose.yml`.
+1 - Open the `.env`.
 
-2 - Search for `Dockerfile-70` in the PHP container section.
+2 - Search for `PHP_VERSION`.
 
-3 - Change the version number, by replacing `Dockerfile-70` with `Dockerfile-56`, like this:
+3 - Set the desired version number:
 
-```yml
-    php-fpm:
-        build:
-            context: ./php-fpm
-            dockerfile: Dockerfile-56
-    ...
+```dotenv
+PHP_VERSION=5.6
 ```
 
-4 - Finally rebuild the container
+4 - Finally rebuild the image
 
 ```bash
 docker-compose build php-fpm
 ```
 
 > For more details about the PHP base image, visit the [official PHP docker images](https://hub.docker.com/_/php/).
-
-
-### B) Switch from PHP `7.0` or `5.6` to PHP `5.5`
-
-We do not natively support PHP 5.5 anymore, but you can get it in few steps:
-
-1 - Clone `https://github.com/laradock/php-fpm`.
-
-3 - Rename `Dockerfile-56` to `Dockerfile-55`.
-
-3 - Edit the file `FROM php:5.6-fpm` to `FROM php:5.5-fpm`.
-
-4 - Build an image from `Dockerfile-55`.
-
-5 - Open the `docker-compose.yml` file.
-
-6 - Point `php-fpm` to your `Dockerfile-55` file.
-
-
 
 
 
@@ -273,11 +250,23 @@ By default **PHP-CLI 7.0** is running.
 
 >Note: it's not very essential to edit the PHP-CLI version. The PHP-CLI is only used for the Artisan Commands & Composer. It doesn't serve your Application code, this is the PHP-FPM job.
 
-The PHP-CLI is installed in the Workspace container. To change the PHP-CLI version you need to edit the `workspace/Dockerfile`.
+The PHP-CLI is installed in the Workspace container. To change the PHP-CLI version you need to simply change the `PHP_VERSION` in te .env file as follow:
 
-Right now you have to manually edit the `Dockerfile` or create a new one like it's done for the PHP-FPM. (consider contributing).
+1 - Open the `.env`.
 
+2 - Search for `PHP_VERSION`.
 
+3 - Set the desired version number:
+
+```dotenv
+PHP_VERSION=7.2
+```
+
+4 - Finally rebuild the image
+
+```bash
+docker-compose build workspace
+```
 
 
 
@@ -288,42 +277,17 @@ Right now you have to manually edit the `Dockerfile` or create a new one like it
 
 1 - First install `xDebug` in the Workspace and the PHP-FPM Containers:
 <br>
-a) open the `docker-compose.yml` file
+a) open the `.env` file
 <br>
-b) search for the `INSTALL_XDEBUG` argument under the Workspace Container
+b) search for the `WORKSPACE_INSTALL_XDEBUG` argument under the Workspace Container
 <br>
 c) set it to `true`
 <br>
-d) search for the `INSTALL_XDEBUG` argument under the PHP-FPM Container
+d) search for the `PHP_FPM_INSTALL_XDEBUG` argument under the PHP-FPM Container
 <br>
 e) set it to `true`
 
-It should be like this:
-
-```yml
-    workspace:
-        build:
-            context: ./workspace
-            args:
-                - INSTALL_XDEBUG=true
-    ...
-    php-fpm:
-        build:
-            context: ./php-fpm
-            args:
-                - INSTALL_XDEBUG=true
-    ...
-```
-
-2 - Open `laradock/workspace/xdebug.ini` and `laradock/php-fpm/xdebug.ini` and enable at least the following configurations:
-
-```
-xdebug.remote_autostart=1
-xdebug.remote_enable=1
-xdebug.remote_connect_back=1
-```
-
-3 - Re-build the containers `docker-compose build workspace php-fpm`
+2 - Re-build the containers `docker-compose build workspace php-fpm`
 
 For information on how to configure xDebug with your IDE and work it out, check this [Repository](https://github.com/LarryEitel/laravel-laradock-phpstorm) or follow up on the next section if you use linux and PhpStorm.
 
@@ -367,23 +331,12 @@ Note: If `.php-fpm/xdebug` doesn't execute and gives `Permission Denied` error t
 <a name="Install-Deployer"></a>
 ## Install Deployer (Deployment tool for PHP)
 
-1 - Open the `docker-compose.yml` file
+1 - Open the `.env` file
 <br>
-2 - Search for the `INSTALL_DEPLOYER` argument under the Workspace Container
+2 - Search for the `WORKSPACE_INSTALL_DEPLOYER` argument under the Workspace Container
 <br>
 3 - Set it to `true`
 <br>
-
-It should be like this:
-
-```yml
-    workspace:
-        build:
-            context: ./workspace
-            args:
-                - INSTALL_DEPLOYER=true
-    ...
-```
 
 4 - Re-build the containers `docker-compose build workspace`
 
@@ -437,7 +390,7 @@ To learn more about how Docker publishes ports, please read [this excellent post
 
 1) Boot the container `docker-compose up -d jenkins`. To enter the container type `docker-compose exec jenkins bash`.
 
-2) Go to `http://localhost:8090/` (if you didn't chanhed your default port mapping) 
+2) Go to `http://localhost:8090/` (if you didn't change your default port mapping)
 
 3) Authenticate from the web app.
 
@@ -478,18 +431,14 @@ composer create-project laravel/laravel my-cool-app "5.2.*"
 For more about the Laravel installation click [here](https://laravel.com/docs/master#installing-laravel).
 
 
-3 - Edit `docker-compose.yml` to Map the new application path:
+3 - Edit `.env` to Map the new application path:
 
 By default, Laradock assumes the Laravel application is living in the parent directory of the laradock folder.
 
 Since the new Laravel application is in the `my-cool-app` folder, we need to replace `../:/var/www` with `../my-cool-app/:/var/www`, as follow:
 
-```yaml
-    application:
-		 image: tianon/true
-        volumes:
-            - ../my-cool-app/:/var/www
-    ...
+```dotenv
+  APP_CODE_PATH_HOST=../my-cool-app/
 ```
 4 - Go to that folder and start working..
 
@@ -562,7 +511,6 @@ b) add a new service container by simply copy-paste this section below PHP-FPM c
     php-worker:
       build:
         context: ./php-worker
-        dockerfile: "Dockerfile-${PHP_VERSION}" #Dockerfile-71 or #Dockerfile-70 available
         args:
           - INSTALL_PGSQL=${PHP_WORKER_INSTALL_PGSQL} #Optionally install PGSQL PHP drivers
       volumes_from:
@@ -645,32 +593,15 @@ composer require predis/predis:^1.0
 
 1 - First install `mongo` in the Workspace and the PHP-FPM Containers:
 <br>
-a) open the `docker-compose.yml` file
+a) open the `.env` file
 <br>
-b) search for the `INSTALL_MONGO` argument under the Workspace Container
+b) search for the `WORKSPACE_INSTALL_MONGO` argument under the Workspace Container
 <br>
 c) set it to `true`
 <br>
-d) search for the `INSTALL_MONGO` argument under the PHP-FPM Container
+d) search for the `PHP_FPM_INSTALL_MONGO` argument under the PHP-FPM Container
 <br>
 e) set it to `true`
-
-It should be like this:
-
-```yml
-    workspace:
-        build:
-            context: ./workspace
-            args:
-                - INSTALL_MONGO=true
-    ...
-    php-fpm:
-        build:
-            context: ./php-fpm
-            args:
-                - INSTALL_MONGO=true
-    ...
-```
 
 2 - Re-build the containers `docker-compose build workspace php-fpm`
 
@@ -770,6 +701,21 @@ docker-compose up -d adminer
 
 
 
+<br>
+<a name="Use-Portainer"></a>
+## Use Portainer
+
+1 - Run the Portainer Container (`portainer`) with the `docker-compose up` command. Example:
+
+```bash
+docker-compose up -d portainer
+```
+
+2 - Open your browser and visit the localhost on port **9010**:  `http://localhost:9010`
+
+
+
+
 
 <br>
 <a name="Use-pgAdmin"></a>
@@ -818,6 +764,8 @@ docker-compose up -d beanstalkd-console
 
 2 - Open your browser and visit `http://localhost:2080/`
 
+_Note: You can customize the port on which beanstalkd console is listening by changing `BEANSTALKD_CONSOLE_HOST_PORT` in `.env`. The default value is *2080*._
+
 3 - Add the server
 
 - Host: beanstalkd
@@ -842,7 +790,7 @@ docker-compose up -d elasticsearch
 
 2 - Open your browser and visit the localhost on port **9200**:  `http://localhost:9200`
 
-> The default username is `user` and the default password is `changeme`.
+> The default username is `elastic` and the default password is `changeme`.
 
 ### Install ElasticSearch Plugin
 
@@ -968,7 +916,7 @@ docker-compose up -d aws
 
 3 - Access the aws container with `docker-compose exec aws bash`
 
-4 - To start using eb cli inside the container, initiaze your project first by doing 'eb init'. Read the [aws eb cli](http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-configuration.html) docs for more details.
+4 - To start using eb cli inside the container, initialize your project first by doing 'eb init'. Read the [aws eb cli](http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-configuration.html) docs for more details.
 
 
 
@@ -986,7 +934,7 @@ docker-compose up -d grafana
 
 3 - Open your browser and visit the localhost on port **3000** at the following URL: `http://localhost:3000`
 
-4 - Login using the credentials User = `admin` Passwort = `admin`. Change the password in the webinterface if you want to.
+4 - Login using the credentials User = `admin`, Password = `admin`. Change the password in the web interface if you want to.
 
 
 
@@ -1072,6 +1020,8 @@ You can add your cron jobs to `workspace/crontab/root` after the `php artisan` l
 
 Make sure you [change the timezone](#Change-the-timezone) if you don't want to use the default (UTC).
 
+If you are on Windows, verify that the line endings for this file are LF only, otherwise the cron jobs will silently fail.
+
 
 
 
@@ -1092,7 +1042,18 @@ To change the default forwarded port for ssh:
     ...
 ```
 
+Then login using:
 
+```bash
+ssh -o PasswordAuthentication=no    \
+    -o StrictHostKeyChecking=no     \
+    -o UserKnownHostsFile=/dev/null \
+    -p 2222                         \
+    -i workspace/insecure_id_rsa    \
+    laradock@localhost
+```
+
+To login as root, replace laradock@locahost with root@localhost.
 
 <br>
 <a name="Change-the-MySQL-Version"></a>
@@ -1212,20 +1173,10 @@ server_name laravel.test;
 
 Enabling Global Composer Install during the build for the container allows you to get your composer requirements installed and available in the container after the build is done.
 
-1 - Open the `docker-compose.yml` file
+1 - Open the `.env` file
 
-2 - Search for the `COMPOSER_GLOBAL_INSTALL` argument under the Workspace Container and set it to `true`
+2 - Search for the `WORKSPACE_COMPOSER_GLOBAL_INSTALL` argument under the Workspace Container and set it to `true`
 
-It should be like this:
-
-```yml
-    workspace:
-        build:
-            context: ./workspace
-            args:
-                - COMPOSER_GLOBAL_INSTALL=true
-    ...
-```
 3 - Now add your dependencies to `workspace/composer.json`
 
 4 - Re-build the Workspace Container `docker-compose build workspace`
@@ -1264,20 +1215,9 @@ c - Re-build the Workspace Container `docker-compose build workspace`
 
 To install NVM and NodeJS in the Workspace container
 
-1 - Open the `docker-compose.yml` file
+1 - Open the `.env` file
 
-2 - Search for the `INSTALL_NODE` argument under the Workspace Container and set it to `true`
-
-It should be like this:
-
-```yml
-    workspace:
-        build:
-            context: ./workspace
-            args:
-                - INSTALL_NODE=true
-    ...
-```
+2 - Search for the `WORKSPACE_INSTALL_NODE` argument under the Workspace Container and set it to `true`
 
 3 - Re-build the container `docker-compose build workspace`
 
@@ -1292,21 +1232,61 @@ It should be like this:
 
 Yarn is a new package manager for JavaScript. It is so faster than npm, which you can find [here](http://yarnpkg.com/en/compare).To install NodeJS and [Yarn](https://yarnpkg.com/) in the Workspace container:
 
-1 - Open the `docker-compose.yml` file
+1 - Open the `.env` file
 
-2 - Search for the `INSTALL_NODE` and `INSTALL_YARN` argument under the Workspace Container and set it to `true`
+2 - Search for the `WORKSPACE_INSTALL_NODE` and `WORKSPACE_INSTALL_YARN` argument under the Workspace Container and set it to `true`
 
-It should be like this:
+3 - Re-build the container `docker-compose build workspace`
 
-```yml
-    workspace:
-        build:
-            context: ./workspace
-            args:
-                - INSTALL_NODE=true
-                - INSTALL_YARN=true
-    ...
-```
+
+
+
+
+
+<br>
+<a name="Install-NPM-GULP"></a>
+## Install NPM GULP toolkit
+
+To install NPM GULP toolkit in the Workspace container
+
+1 - Open the `.env` file
+
+2 - Search for the `WORKSPACE_INSTALL_NPM_GULP` argument under the Workspace Container and set it to `true`
+
+3 - Re-build the container `docker-compose build workspace`
+
+
+
+
+
+
+
+<br>
+<a name="Install-NPM-BOWER"></a>
+## Install NPM BOWER package manager
+
+To install NPM BOWER package manager in the Workspace container
+
+1 - Open the `.env` file
+
+2 - Search for the `WORKSPACE_INSTALL_NPM_BOWER` argument under the Workspace Container and set it to `true`
+
+3 - Re-build the container `docker-compose build workspace`
+
+
+
+
+
+
+<br>
+<a name="Install-NPM-VUE-CLI"></a>
+## Install NPM VUE CLI
+
+To install NPM VUE CLI in the Workspace container
+
+1 - Open the `.env` file
+
+2 - Search for the `WORKSPACE_INSTALL_NPM_VUE_CLI` argument under the Workspace Container and set it to `true`
 
 3 - Re-build the container `docker-compose build workspace`
 
@@ -1321,20 +1301,9 @@ It should be like this:
 
 Linuxbrew is a package manager for Linux. It is the Linux version of MacOS Homebrew and can be found [here](http://linuxbrew.sh). To install Linuxbrew in the Workspace container:
 
-1 - Open the `docker-compose.yml` file
+1 - Open the `.env` file
 
-2 - Search for the `INSTALL_LINUXBREW` argument under the Workspace Container and set it to `true`
-
-It should be like this:
-
-```yml
-    workspace:
-        build:
-            context: ./workspace
-            args:
-                - INSTALL_LINUXBREW=true
-    ...
-```
+2 - Search for the `WORKSPACE_INSTALL_LINUXBREW` argument under the Workspace Container and set it to `true`
 
 3 - Re-build the container `docker-compose build workspace`
 
@@ -1360,32 +1329,16 @@ You are free to modify the `aliases.sh` as you see fit, adding your own aliases 
 
 1 - First install `aerospike` in the Workspace and the PHP-FPM Containers:
 <br>
-a) open the `docker-compose.yml` file
+a) open the `.env` file
 <br>
-b) search for the `INSTALL_AEROSPIKE` argument under the Workspace Container
+b) search for the `WORKSPACE_INSTALL_AEROSPIKE` argument under the Workspace Container
 <br>
 c) set it to `true`
 <br>
-d) search for the `INSTALL_AEROSPIKE` argument under the PHP-FPM Container
+d) search for the `PHP_FPM_INSTALL_AEROSPIKE` argument under the PHP-FPM Container
 <br>
 e) set it to `true`
-
-It should be like this:
-
-```yml
-    workspace:
-        build:
-            context: ./workspace
-            args:
-                - INSTALL_AEROSPIKE=true
-    ...
-    php-fpm:
-        build:
-            context: ./php-fpm
-            args:
-                - INSTALL_AEROSPIKE=true
-    ...
-```
+<br>
 
 2 - Re-build the containers `docker-compose build workspace php-fpm`
 
@@ -1398,23 +1351,12 @@ It should be like this:
 <a name="Install-Laravel-Envoy"></a>
 ## Install Laravel Envoy (Envoy Task Runner)
 
-1 - Open the `docker-compose.yml` file
+1 - Open the `.env` file
 <br>
-2 - Search for the `INSTALL_LARAVEL_ENVOY` argument under the Workspace Container
+2 - Search for the `WORKSPACE_INSTALL_LARAVEL_ENVOY` argument under the Workspace Container
 <br>
 3 - Set it to `true`
 <br>
-
-It should be like this:
-
-```yml
-    workspace:
-        build:
-            context: ./workspace
-            args:
-                - INSTALL_LARAVEL_ENVOY=true
-    ...
-```
 
 4 - Re-build the containers `docker-compose build workspace`
 
@@ -1509,17 +1451,17 @@ Quick Setup giude, (we recommend you check their docs)
 <a name="Docker-Sync"></a>
 ### Workaround B: using d4m-nfs
 
-You can use the d4m-nfs solution in 2 ways, one is using the Laradock built it integration, and the other is using the tool separatly. Below is show case of both methods:
+You can use the d4m-nfs solution in 2 ways, the first is by using the built-in Laradock integration, and the second is using the tool separately. Below is show case of both methods:
 
 
-#### B.1: using the built in d4m-nfs integration
+### B.1: using the built in d4m-nfs integration
 
 In simple terms, docker-sync creates a docker container with a copy of all the application files that can be accessed very quickly from the other containers.
 On the other hand, docker-sync runs a process on the host machine that continuously tracks and updates files changes from the host to this intermediate container.
 
 Out of the box, it comes pre-configured for OS X, but using it on Windows is very easy to set-up by modifying the `DOCKER_SYNC_STRATEGY` on the `.env`
 
-##### Usage
+#### Usage
 
 Laradock comes with `sync.sh`, an optional bash script, that automates installing, running and stopping docker-sync.  Note that to run the bash script you may need to change the permissions `chmod 755 sync.sh`
 
@@ -1534,22 +1476,24 @@ Laradock comes with `sync.sh`, an optional bash script, that automates installin
 DOCKER_SYNC_STRATEGY=native_osx
 ```
 
-2) Install the docker-sync gem on the host-machine:
+3) set `APP_CODE_PATH_CONTAINER=/var/www` to `APP_CODE_PATH_CONTAINER=/var/www:nocopy` in the .env file
+
+4) Install the docker-sync gem on the host-machine:
 ```bash
 ./sync.sh install
 ```
-3) Start docker-sync and the Laradock environment.
+5) Start docker-sync and the Laradock environment.
 Specify the services you want to run, as you would normally do with `docker-compose up`
 ```bash
 ./sync.sh up nginx mysql
 ```
 Please note that the first time docker-sync runs, it will copy all the files to the intermediate container and that may take a very long time (15min+).
-4) To stop the environment and docker-sync do:
+6) To stop the environment and docker-sync do:
 ```bash
 ./sync.sh down
 ```
 
-##### Setting up Aliases (optional)
+#### Setting up Aliases (optional)
 
 You may create bash profile aliases to avoid having to remember and type these commands for everyday development.
 Add the following lines to your `~/.bash_profile`:
@@ -1563,7 +1507,7 @@ alias devdown="cd /PATH_TO_LARADOCK/laradock; ./sync.sh down"
 Now from any location on your machine, you can simply run `devup`, `devbash` and `devdown`.
 
 
-##### Additional Commands
+#### Additional Commands
 
 Opening bash on the workspace container (to run artisan for example):
  ```bash
@@ -1579,7 +1523,7 @@ Removing and cleaning up the files and the docker-sync container. Use only if yo
 ```
 
 
-##### Additional Notes
+#### Additional Notes
 
 - You may run laradock with or without docker-sync at any time using with the same `.env` and `docker-compose.yml`, because the configuration is overridden automatically when docker-sync is used.
 - You may inspect the `sync.sh` script to learn each of the commands and even add custom ones.
@@ -1596,7 +1540,7 @@ Visit the [docker-sync documentation](https://github.com/EugenMayer/docker-sync/
 
 <br>
 
-#### B.2: using the d4m-nfs tool
+### B.2: using the d4m-nfs tool
 
 [D4m-nfs](https://github.com/IFSight/d4m-nfs) automatically mount NFS volume instead of osxfs one.
 
@@ -1612,7 +1556,7 @@ Click on the Docker Icon > Preferences > (remove everything form the list except
 git clone https://github.com/IFSight/d4m-nfs ~/d4m-nfs
 ```
 
-4) Create (or edit) the file `~/d4m-nfs/etc/d4m-nfs-mounts.txt`, and write the follwing configuration in it:
+4) Create (or edit) the file `~/d4m-nfs/etc/d4m-nfs-mounts.txt`, and write the following configuration in it:
 
 ```txt
 /Users:/Users
@@ -1729,3 +1673,13 @@ This error sometimes happens because your Laravel application isn't running on t
 ## I get stuck when building nginx on `fetch http://mirrors.aliyun.com/alpine/v3.5/main/x86_64/APKINDEX.tar.gz`
 
 As stated on [#749](https://github.com/laradock/laradock/issues/749#issuecomment-293296687), removing the line `RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories` from `nginx/Dockerfile` solves the problem.		
+
+## Custom composer repo packagist url and npm registry url
+
+In China, the origin source of composer and npm is very slow. You can add `WORKSPACE_NPM_REGISTRY` and `WORKSPACE_COMPOSER_REPO_PACKAGIST` config in `.env` to use your custom source.
+
+Example:
+```bash
+WORKSPACE_NPM_REGISTRY=https://registry.npm.taobao.org
+WORKSPACE_COMPOSER_REPO_PACKAGIST=https://packagist.phpcomposer.com
+```
